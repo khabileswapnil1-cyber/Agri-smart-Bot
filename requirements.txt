@@ -1,0 +1,10 @@
+flask
+twilio
+pandas
+scikit-learn
+matplotlib
+joblib
+flask
+google-generativeai
+joblib
+numpy
