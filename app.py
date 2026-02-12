@@ -10,10 +10,8 @@ app = Flask(__name__)
 # --- CONFIGURATION ---
 # API Key सुरक्षित ठेवण्यासाठी environment variable वापरा
 API_KEY = os.environ.get("GEMINI_API_KEY")
-# नवीन पद्धत: क्लायंट तयार करा
 client = genai.Client(api_key=API_KEY)
-# मॉडेलचे नाव एका व्हेरिएबलमध्ये ठेवा
-MODEL_ID = "gemini-2.5-flash"
+MODEL_ID = "gemini-2.5-flash-lite" # अद्ययावत आणि वेगवान मॉडेल
 
 OFFICIAL_SOURCES = {
     "weather": "https://mausam.imd.gov.in/",
@@ -30,7 +28,7 @@ try:
     print("Crop model loaded successfully.")
 except Exception as e:
     ml_model = None
-    print(f"Warning: crop_model.pkl not found. Simulation mode active. Error: {e}")
+    print(f"Warning: crop_model.pkl not found. AI-only mode active. Error: {e}")
 
 @app.route("/")
 def index():
@@ -43,50 +41,54 @@ def analyze():
         if not data:
             return jsonify({"status": "error", "message": "माहिती मिळालेली नाही."})
 
+        # युजरकडून मिळालेला डेटा
         location = data.get('location', 'Maharashtra')
         n = float(data.get('n') or 0)
         p = float(data.get('p') or 0)
         k = float(data.get('k') or 0)
         ph = float(data.get('ph') or 7.0)
 
-        temp, hum, rain = 28.5, 75.0, 1100.0
-
-        column_names = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
-        features = pd.DataFrame([[n, p, k, temp, hum, ph, rain]], columns=column_names)
-
+        # १. ML मॉडेलद्वारे प्राथमिक पिकांचा अंदाज (जर उपलब्ध असेल तर)
+        top_crops_list = []
         if ml_model and hasattr(ml_model, "predict_proba"):
+            # सरासरी हवामान घटक गृहीत धरले आहेत
+            features = pd.DataFrame([[n, p, k, 28.5, 75.0, ph, 1100.0]], 
+                                    columns=['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall'])
             probs = ml_model.predict_proba(features)[0]
             top_indices = np.argsort(probs)[-5:][::-1]
-            top_crops = ml_model.classes_[top_indices]
+            top_crops_list = [str(c).upper() for c in ml_model.classes_[top_indices]]
         else:
-            top_crops = ['Soybean', 'Cotton', 'Rice', 'Pigeonpeas', 'Gram']
+            top_crops_list = ["Soybean", "Cotton", "Tomato", "Pigeonpeas", "Onion"]
 
-        # AI Report Generation Prompt
+        # २. AI अहवाल निर्मिती (५०+ पिके, आधुनिक शेती, आणि बाजारभाव विश्लेषण)
         prompt = f"""
-        User Location: {location}.
-        Top 5 Recommended Crops: {', '.join(top_crops)}.
-        Soil data: N={n}, P={p}, K={k}, pH={ph}.
+        एक प्रगत कृषी तज्ज्ञ म्हणून, {location} या ठिकाणच्या शेतकऱ्यासाठी खालील माहितीवर आधारित सविस्तर मराठी अहवाल तयार करा:
         
-        Provide a detailed agricultural report in Marathi:
-        1. Why these 5 crops suit this specific soil?
-        2. Market price trends for 2024-2026.
-        3. Weather suitability based on IMD trends.
-        4. Profit potential for each.
-        Use bullet points. Keep it professional.
+        माहिती:
+        - ठिकाण: {location}
+        - जमिनीचे घटक: नत्र(N):{n}, स्फुरद(P):{p}, पालाश(K):{k}, सामू(pH):{ph}
+        - संभाव्य पिके: {', '.join(top_crops_list)} आणि इतर ५०+ भाजीपाला/नगदी पिके.
+
+        अहवालात खालील ५ मुद्द्यांचा समावेश असावा:
+        १. शिफारस केलेली सर्वोत्तम ५ पिके: ही पिके या विशिष्ट जमिनीच्या गुणधर्मांशी (Soil Compatibility) कशी जुळतात?
+        २. उत्पन्न वाढीचे मार्ग (Yield Increase): प्रत्येक पिकाचे उत्पन्न दुप्पट करण्यासाठी कोणते विशेष खत व्यवस्थापन किंवा प्रक्रिया करावी?
+        ३. आधुनिक शेती पद्धती (Modern Farming): ठिबक सिंचन, मल्चिंग पेपर, किंवा संरक्षित शेती (Polyhouse) यांचा वापर या ५ पिकांसाठी कसा करावा?
+        ४. हवामान सुसंगतता (IMD Trends): पुढील ५-६ महिन्यांचा {location} मधील हवामान अंदाज लक्षात घेता ही पिके किती सुरक्षित आहेत?
+        ५. आर्थिक विश्लेषण: २०२४ ते २०२६ मधील बाजारभाव कल (Market Price Trends) आणि प्रत्येक पिकाची नफा क्षमता (Profit Potential).
+
+        सूचना: अहवाल बुलेट पॉइंट्समध्ये, व्यावसायिक भाषेत आणि पूर्णपणे मराठीत असावा.
         """
         
-        # दुरुस्त केलेला भाग: क्लायंट वापरून content generate करणे
         response = client.models.generate_content(
             model=MODEL_ID,
             contents=prompt
         )
-        
         ai_advice = response.text if response else "AI विश्लेषण उपलब्ध नाही."
 
         return jsonify({
             "status": "success",
             "location": location,
-            "crops": [str(c).upper() for c in top_crops],
+            "recommended_crops": top_crops_list,
             "ai_advice": ai_advice,
             "links": OFFICIAL_SOURCES
         })
@@ -96,4 +98,4 @@ def analyze():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=True)
