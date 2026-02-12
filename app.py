@@ -9,7 +9,7 @@ app = Flask(__name__)
 # --- CONFIGURATION ---
 # तुमची Google Gemini API Key येथे टाका
 genai.configure(api_key="AIzaSyDKuwoOX3DthNEmoO7dpVUxQN_CuVAK0yg")
-ai_model = genai.GenerativeModel('gemini-2.5-flash')
+ai_model = genai.GenerativeModel('gemini-1.5-flash')
 
 # अधिकृत सरकारी स्रोत
 OFFICIAL_SOURCES = {
