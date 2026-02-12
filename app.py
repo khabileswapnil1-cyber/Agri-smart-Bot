@@ -8,28 +8,27 @@ from flask import Flask, request, render_template, jsonify
 app = Flask(__name__)
 
 # --- CONFIGURATION ---
+# It is best practice to use environment variables for keys on Render
 API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyDKuwoOX3DthNEmoO7dpVUxQN_CuVAK0yg")
-
-# Force the library to use the v1beta endpoint where gemini-1.5-flash is most stable
 genai.configure(api_key=API_KEY, transport='rest')
+ai_model = genai.GenerativeModel('gemini-1.5-flash-latest')
 
-# Official sources for the report
 OFFICIAL_SOURCES = {
     "weather": "https://mausam.imd.gov.in/",
     "market": "https://agmarknet.gov.in/",
     "soil": "https://soilhealth.dac.gov.in/"
 }
 
-# ML Model Loading
+# Ensure the model is loaded from the current directory
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(BASE_DIR, 'crop_model.pkl')
 
 try:
     ml_model = joblib.load(model_path)
-    print("Model loaded successfully.")
+    print("Crop model loaded successfully.")
 except Exception as e:
     ml_model = None
-    print(f"ML Model not found, using simulation mode. Error: {e}")
+    print(f"Warning: crop_model.pkl not found. Simulation mode active. Error: {e}")
 
 @app.route("/")
 def index():
@@ -39,42 +38,46 @@ def index():
 def analyze():
     try:
         data = request.get_json()
+        if not data:
+            return jsonify({"status": "error", "message": "माहिती मिळालेली नाही."})
+
+        # Convert inputs safely to float, default to 0 if empty
         location = data.get('location', 'Maharashtra')
         n = float(data.get('n') or 0)
         p = float(data.get('p') or 0)
         k = float(data.get('k') or 0)
         ph = float(data.get('ph') or 7.0)
 
-        # 1. ML Logic
-        column_names = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
-        features = pd.DataFrame([[n, p, k, 28.0, 70.0, ph, 1000.0]], columns=column_names)
+        # Environmental constants (Can be replaced with real API data later)
+        temp, hum, rain = 28.5, 75.0, 1100.0
 
-        if ml_model:
+        # ML Prediction Logic
+        column_names = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
+        features = pd.DataFrame([[n, p, k, temp, hum, ph, rain]], columns=column_names)
+
+        if ml_model and hasattr(ml_model, "predict_proba"):
             probs = ml_model.predict_proba(features)[0]
             top_indices = np.argsort(probs)[-5:][::-1]
             top_crops = ml_model.classes_[top_indices]
         else:
             top_crops = ['Soybean', 'Cotton', 'Rice', 'Pigeonpeas', 'Gram']
 
-        # 2. AI Logic (Updated to fix 404 error)
-        try:
-            # Using the direct model string
-            model = genai.GenerativeModel('gemini-1.5-flash')
-           
-            prompt = f"""
-            Location: {location}. Soil: N={n}, P={p}, K={k}, pH={ph}.
-            Recommended Crops: {', '.join(top_crops)}.
-            Write a professional agricultural report in Marathi including:
-            - Suitability reasons
-            - Price trends (2024-2026)
-            - Weather and Profit tips.
-            """
-           
-            response = model.generate_content(prompt)
-            ai_advice = response.text
-        except Exception as ai_err:
-            print(f"AI Error: {ai_err}")
-            ai_advice = "क्षमस्व, AI विश्लेषण सध्या उपलब्ध नाही. कृपया पिकांची यादी पहा."
+        # AI Report Generation
+        prompt = f"""
+        User Location: {location}.
+        Top 5 Recommended Crops: {', '.join(top_crops)}.
+        Soil data: N={n}, P={p}, K={k}, pH={ph}.
+       
+        Provide a detailed agricultural report in Marathi:
+        1. Why these 5 crops suit this specific soil?
+        2. Market price trends for 2024-2026.
+        3. Weather suitability based on IMD trends.
+        4. Profit potential for each.
+        Use bullet points. Keep it professional.
+        """
+       
+        response = ai_model.generate_content(prompt)
+        ai_advice = response.text if response else "AI विश्लेषण उपलब्ध नाही."
 
         return jsonify({
             "status": "success",
