@@ -2,16 +2,19 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
-import google.genai as genai
+from google import genai
 from flask import Flask, request, render_template, jsonify
 
 app = Flask(__name__)
 
 # --- CONFIGURATION ---
-# It is best practice to use environment variables for keys on Render
+# API Key सुरक्षित ठेवण्यासाठी environment variable वापरा
 API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyDKuwoOX3DthNEmoO7dpVUxQN_CuVAK0yg")
+
+# नवीन पद्धत: क्लायंट तयार करा
 client = genai.Client(api_key=API_KEY)
-ai_model = client.models.generate_content('gemini-2.5-flash')
+# मॉडेलचे नाव एका व्हेरिएबलमध्ये ठेवा
+MODEL_ID = "gemini-2.0-flash"
 
 OFFICIAL_SOURCES = {
     "weather": "https://mausam.imd.gov.in/",
@@ -19,7 +22,7 @@ OFFICIAL_SOURCES = {
     "soil": "https://soilhealth.dac.gov.in/"
 }
 
-# Ensure the model is loaded from the current directory
+# मॉडेल लोड करणे
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(BASE_DIR, 'crop_model.pkl')
 
@@ -41,17 +44,14 @@ def analyze():
         if not data:
             return jsonify({"status": "error", "message": "माहिती मिळालेली नाही."})
 
-        # Convert inputs safely to float, default to 0 if empty
         location = data.get('location', 'Maharashtra')
         n = float(data.get('n') or 0)
         p = float(data.get('p') or 0)
         k = float(data.get('k') or 0)
         ph = float(data.get('ph') or 7.0)
 
-        # Environmental constants (Can be replaced with real API data later)
         temp, hum, rain = 28.5, 75.0, 1100.0
 
-        # ML Prediction Logic
         column_names = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
         features = pd.DataFrame([[n, p, k, temp, hum, ph, rain]], columns=column_names)
 
@@ -62,12 +62,12 @@ def analyze():
         else:
             top_crops = ['Soybean', 'Cotton', 'Rice', 'Pigeonpeas', 'Gram']
 
-        # AI Report Generation
+        # AI Report Generation Prompt
         prompt = f"""
         User Location: {location}.
         Top 5 Recommended Crops: {', '.join(top_crops)}.
         Soil data: N={n}, P={p}, K={k}, pH={ph}.
-       
+        
         Provide a detailed agricultural report in Marathi:
         1. Why these 5 crops suit this specific soil?
         2. Market price trends for 2024-2026.
@@ -75,8 +75,13 @@ def analyze():
         4. Profit potential for each.
         Use bullet points. Keep it professional.
         """
-       
-        response = ai_model.generate_content(prompt)
+        
+        # दुरुस्त केलेला भाग: क्लायंट वापरून content generate करणे
+        response = client.models.generate_content(
+            model=MODEL_ID,
+            contents=prompt
+        )
+        
         ai_advice = response.text if response else "AI विश्लेषण उपलब्ध नाही."
 
         return jsonify({
