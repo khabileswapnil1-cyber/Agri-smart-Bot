@@ -13,7 +13,7 @@ API_KEY = os.environ.get("GEMINI_API_KEY")
 # नवीन पद्धत: क्लायंट तयार करा
 client = genai.Client(api_key=API_KEY)
 # मॉडेलचे नाव एका व्हेरिएबलमध्ये ठेवा
-MODEL_ID = "gemini-2.0-flash"
+MODEL_ID = "gemini-2.5-flash"
 
 OFFICIAL_SOURCES = {
     "weather": "https://mausam.imd.gov.in/",
