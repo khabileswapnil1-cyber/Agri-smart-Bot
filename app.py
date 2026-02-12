@@ -12,7 +12,7 @@ app = Flask(__name__)
 # तुम्ही Render वर 'GEMINI_API_KEY' या नावाने ही की सेट करू शकता
 # ---api_key = os.environ.get("GEMINI_API_KEY", "AIzaSyDKuwoOX3DthNEmoO7dpVUxQN_CuVAK0yg")
 genai.configure(api_key="AIzaSyDKuwoOX3DthNEmoO7dpVUxQN_CuVAK0yg")
-ai_model = genai.GenerativeModel('gemini-2.5-flash')
+ai_model = genai.GenerativeModel('gemini-1.5-flash')
 
 # अधिकृत सरकारी स्रोत
 OFFICIAL_SOURCES = {
