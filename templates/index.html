@@ -6,15 +6,21 @@
     <title>Agri-Smart AI Portal</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Marathi:wght@400;700&display=swap" rel="stylesheet">
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        body { font-family: 'Noto Sans Marathi', sans-serif; }
+        /* फॉन्ट लोड न झाल्यास सिस्टिम फॉन्ट वापरला जाईल */
+        body { 
+            font-family: 'Noto Sans Marathi', ui-sans-serif, system-ui, -apple-system, sans-serif; 
+        }
         @media print { .no-print { display: none; } }
         
-        /* Interactive Crop Cards Styling */
         .crop-card { 
             cursor: pointer; 
             transition: all 0.3s ease; 
@@ -73,7 +79,6 @@
         </div>
 
         <div id="reportContent" class="hidden space-y-6">
-            
             <div class="bg-white p-6 md:p-10 rounded-2xl shadow-xl border-t-8 border-green-600">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b pb-6 mb-8 gap-4">
                     <div>
@@ -118,32 +123,24 @@
                         <span>📊 बाजारभाव कल: <span id="chartCropName" class="text-green-700 ml-1"></span></span>
                         <span class="text-[10px] bg-blue-100 text-blue-700 px-2 py-1 rounded">मागील २४ महिने</span>
                     </h3>
-                    <div class="w-full overflow-hidden">
-                        <canvas id="priceChart" height="180"></canvas>
+                    <div class="w-full overflow-hidden" style="height: 250px;">
+                        <canvas id="priceChart"></canvas>
                     </div>
                 </div>
 
                 <div class="bg-white p-6 rounded-xl border-l-4 border-amber-500 shadow-sm bg-amber-50/30">
                     <h3 class="text-xl font-bold text-amber-800 mb-4 flex items-center">
-                        <span class="mr-2">🤖</span> AI तज्ज्ञ विश्लेषण (Reasoning)
+                        <span class="mr-2">🤖</span> AI तज्ज्ञ विश्लेषण
                     </h3>
                     <div id="aiAdvice" class="text-gray-700 leading-relaxed text-sm md:text-base whitespace-pre-wrap"></div>
-                </div>
-
-                <div class="mt-8 pt-6 border-t border-gray-100 text-[10px] text-gray-400 flex flex-col md:flex-row justify-between gap-4">
-                    <p>हा अहवाल IMD (हवामान विभाग) आणि Agmarknet च्या अधिकृत डेटावर आधारित AI द्वारे व्युत्पन्न केला आहे.</p>
-                    <div class="flex gap-3 font-bold text-green-600">
-                        <span>mausam.imd.gov.in</span>
-                        <span>agmarknet.gov.in</span>
-                    </div>
                 </div>
             </div>
 
             <div class="no-print flex flex-col md:flex-row gap-4">
-                <button onclick="downloadPDF()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center gap-2 transition-all">
+                <button onclick="downloadPDF()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg flex justify-center items-center gap-2">
                     📄 PDF अहवाल डाउनलोड करा
                 </button>
-                <button onclick="window.location.reload()" class="bg-gray-200 text-gray-700 px-8 py-4 rounded-xl font-bold hover:bg-gray-300 transition-all">
+                <button onclick="window.location.reload()" class="bg-gray-200 text-gray-700 px-8 py-4 rounded-xl font-bold">
                     माहिती बदला
                 </button>
             </div>
@@ -153,11 +150,9 @@
     <script>
         let myChart = null;
 
-        // Function to create/update chart
         function renderPriceChart(cropName) {
             document.getElementById('chartCropName').innerText = cropName;
             const ctx = document.getElementById('priceChart').getContext('2d');
-            
             if (myChart) { myChart.destroy(); }
 
             const months = ["जाने", "फेब्रु", "मार्च", "एप्रि", "मे", "जून", "जुलै", "ऑग", "सप्टें", "ऑक्टो", "नोव्हें", "डिसें"];
@@ -166,7 +161,6 @@
                 labels.push(months[i % 12] + " " + (i < 12 ? "2024" : "2025"));
             }
 
-            // Simulate realistic agricultural price data based on crop name
             const seed = cropName.length;
             const prices = Array.from({length: 24}, (_, i) => 
                 Math.floor(Math.sin(i * 0.5) * 500) + 5000 + (seed * 100) + (Math.random() * 300)
@@ -182,8 +176,7 @@
                         borderColor: '#16a34a',
                         backgroundColor: 'rgba(22, 163, 74, 0.05)',
                         borderWidth: 3,
-                        pointRadius: 3,
-                        pointBackgroundColor: '#16a34a',
+                        pointRadius: 4,
                         fill: true,
                         tension: 0.4
                     }]
@@ -191,34 +184,20 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    animation: { duration: 600 },
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { 
-                            grid: { color: '#f1f5f9' },
-                            ticks: { font: { size: 10 } }
-                        },
-                        x: { 
-                            grid: { display: false },
-                            ticks: { font: { size: 9 }, maxRotation: 45 }
-                        }
-                    }
+                    plugins: { legend: { display: false } }
                 }
             });
         }
 
-        // Handle crop selection via cards
         function selectCrop(element, cropName) {
             document.querySelectorAll('.crop-card').forEach(el => el.classList.remove('active-crop'));
             element.classList.add('active-crop');
             renderPriceChart(cropName);
         }
 
-        // Main Analysis Trigger
         async function getAnalysis() {
             const btn = document.getElementById('submitBtn');
             const reportDiv = document.getElementById('reportContent');
-            
             const payload = {
                 location: document.getElementById('location').value,
                 n: document.getElementById('n').value,
@@ -233,7 +212,7 @@
             }
 
             btn.disabled = true;
-            btn.innerText = "तज्ज्ञ सल्ला तयार होत आहे... कृपया थांबा";
+            btn.innerText = "तज्ज्ञ सल्ला तयार होत आहे...";
 
             try {
                 const response = await fetch('/analyze', {
@@ -241,13 +220,10 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-
                 const data = await response.json();
 
                 if (data.status === "success") {
                     reportDiv.classList.remove('hidden');
-                    
-                    // Populate UI
                     document.getElementById('resLocationDisplay').innerText = "📍 " + data.location;
                     document.getElementById('resN').innerText = payload.n;
                     document.getElementById('resP').innerText = payload.p;
@@ -256,7 +232,6 @@
                     document.getElementById('reportDate').innerText = new Date().toLocaleDateString('mr-IN');
                     document.getElementById('aiAdvice').innerText = data.ai_advice;
 
-                    // Generate Crop Cards with click event
                     const cardContainer = document.getElementById('cropCards');
                     cardContainer.innerHTML = data.crops.map((crop, index) => 
                         `<div onclick="selectCrop(this, '${crop}')" 
@@ -265,10 +240,7 @@
                         </div>`
                     ).join('');
 
-                    // Default chart for first crop
                     renderPriceChart(data.crops[0]);
-
-                    // Scroll to report
                     reportDiv.scrollIntoView({ behavior: 'smooth' });
                 }
             } catch (error) {
@@ -279,17 +251,14 @@
             }
         }
 
-        // PDF Generation
         function downloadPDF() {
             const element = document.getElementById('reportContent');
-            const opt = {
-                margin:       [10, 5, 10, 5],
-                filename:     'AgriSmart_Analysis_Report.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-            html2pdf().set(opt).from(element).save();
+            html2pdf().set({
+                margin: [10, 5],
+                filename: 'AgriSmart_Report.pdf',
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).from(element).save();
         }
     </script>
 </body>
