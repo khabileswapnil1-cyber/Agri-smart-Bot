@@ -1,5 +1,6 @@
 import os
 import joblib
+import pandas as pd
 import numpy as np
 import google.generativeai as genai
 from flask import Flask, request, render_template, jsonify
@@ -8,7 +9,7 @@ app = Flask(__name__)
 
 # --- CONFIGURATION ---
 # तुमची Google Gemini API Key येथे टाका
-genai.configure(api_key="AIzaSyDKuwoOX3DthNEmoO7dpVUxQN_CuVAK0yg")
+genai.configure(api_key="GEMINI_API_KEY")
 ai_model = genai.GenerativeModel('gemini-1.5-flash')
 
 # अधिकृत सरकारी स्रोत
@@ -39,9 +40,10 @@ def analyze():
         k = float(data['k'])
         ph = float(data['ph'])
 
-        # हवामान आणि पावसाचा अंदाज (Average for 2026 Prediction)
+        # हवामान आणि पावसाचा अंदाज (Pandas वापरून)
         temp, hum, rain = 28.5, 75.0, 1100.0
-        features = np.array([[n, p, k, temp, hum, ph, rain]])
+        column_names = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
+	features = pd.DataFrame([[n, p, k, temp, hum, ph, rain]], columns=column_names)
 
         # १. टॉप ५ पिकांची शिफारस (ML Logic)
         if ml_model and hasattr(ml_model, "predict_proba"):
