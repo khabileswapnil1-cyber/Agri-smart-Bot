@@ -10,9 +10,9 @@ app = Flask(__name__)
 # --- CONFIGURATION ---
 # सुरक्षिततेसाठी API Key Environment Variable मधून घेणे चांगले असते
 # तुम्ही Render वर 'GEMINI_API_KEY' या नावाने ही की सेट करू शकता
-api_key = os.environ.get("GEMINI_API_KEY", "AIzaSyDKuwoOX3DthNEmoO7dpVUxQN_CuVAK0yg")
-genai.configure(api_key=api_key)
-ai_model = genai.GenerativeModel('gemini-1.5-flash')
+# ---api_key = os.environ.get("GEMINI_API_KEY", "AIzaSyDKuwoOX3DthNEmoO7dpVUxQN_CuVAK0yg")
+genai.configure(api_key="AIzaSyDKuwoOX3DthNEmoO7dpVUxQN_CuVAK0yg")
+ai_model = genai.GenerativeModel('gemini-2.5-flash')
 
 # अधिकृत सरकारी स्रोत
 OFFICIAL_SOURCES = {
@@ -91,4 +91,4 @@ def analyze():
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port, debug=True)
