@@ -9,8 +9,7 @@ app = Flask(__name__)
 
 # --- CONFIGURATION ---
 # API Key सुरक्षित ठेवण्यासाठी environment variable वापरा
-API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyDKuwoOX3DthNEmoO7dpVUxQN_CuVAK0yg")
-
+API_KEY = os.environ.get("GEMINI_API_KEY")
 # नवीन पद्धत: क्लायंट तयार करा
 client = genai.Client(api_key=API_KEY)
 # मॉडेलचे नाव एका व्हेरिएबलमध्ये ठेवा
