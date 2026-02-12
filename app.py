@@ -1,15 +1,17 @@
 import os
 import joblib
-import pandas as pd
 import numpy as np
+import pandas as pd  # <--- नवीन बदल: वॉर्निंग घालवण्यासाठी महत्त्वाचे
 import google.generativeai as genai
 from flask import Flask, request, render_template, jsonify
 
 app = Flask(__name__)
 
 # --- CONFIGURATION ---
-# तुमची Google Gemini API Key येथे टाका
-genai.configure(api_key="GEMINI_API_KEY")
+# सुरक्षिततेसाठी API Key Environment Variable मधून घेणे चांगले असते
+# तुम्ही Render वर 'GEMINI_API_KEY' या नावाने ही की सेट करू शकता
+api_key = os.environ.get("GEMINI_API_KEY", "AIzaSyDKuwoOX3DthNEmoO7dpVUxQN_CuVAK0yg")
+genai.configure(api_key=api_key)
 ai_model = genai.GenerativeModel('gemini-1.5-flash')
 
 # अधिकृत सरकारी स्रोत
@@ -40,13 +42,18 @@ def analyze():
         k = float(data['k'])
         ph = float(data['ph'])
 
-        # हवामान आणि पावसाचा अंदाज (Pandas वापरून)
+        # हवामान आणि पावसाचा अंदाज
         temp, hum, rain = 28.5, 75.0, 1100.0
+
+        # --- मुख्य बदल येथे आहे (UserWarning टाळण्यासाठी) ---
+        # तुमच्या मॉडेलमधील कॉलमची नावे (N, P, K, temperature, humidity, ph, rainfall) 
+        # तंतोतंत तशीच असायला हवीत जशी ट्रेनिंगमध्ये होती.
         column_names = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
-	features = pd.DataFrame([[n, p, k, temp, hum, ph, rain]], columns=column_names)
+        features = pd.DataFrame([[n, p, k, temp, hum, ph, rain]], columns=column_names)
 
         # १. टॉप ५ पिकांची शिफारस (ML Logic)
         if ml_model and hasattr(ml_model, "predict_proba"):
+            # आता 'features' हे DataFrame असल्याने वॉर्निंग येणार नाही
             probs = ml_model.predict_proba(features)[0]
             top_indices = np.argsort(probs)[-5:][::-1]
             top_crops = ml_model.classes_[top_indices]
@@ -54,7 +61,7 @@ def analyze():
             # मॉडेल नसल्यास डिफॉल्ट टॉप पिके
             top_crops = ['Soybean', 'Cotton', 'Rice', 'Pigeonpeas', 'Gram']
 
-        # २. Generative AI कडून सविस्तर मार्केट आणि हवामान विश्लेषण
+        # २. Generative AI कडून सविस्तर विश्लेषण
         prompt = f"""
         User Location: {location}. 
         Top 5 Recommended Crops: {', '.join(top_crops)}.
@@ -83,6 +90,5 @@ def analyze():
         return jsonify({"status": "error", "message": str(e)})
 
 if __name__ == "__main__":
-    # Render साठी आवश्यक बदल:
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
