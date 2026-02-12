@@ -2,7 +2,7 @@ import os
 import joblib
 import numpy as np
 import pandas as pd
-import google.generativeai as genai
+import google.genai as genai
 from flask import Flask, request, render_template, jsonify
 
 app = Flask(__name__)
@@ -11,7 +11,7 @@ app = Flask(__name__)
 # It is best practice to use environment variables for keys on Render
 API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyDKuwoOX3DthNEmoO7dpVUxQN_CuVAK0yg")
 genai.configure(api_key=API_KEY, transport='rest')
-ai_model = genai.GenerativeModel('gemini-pro')
+ai_model = genai.GenerativeModel('gemini-2.5-flash')
 
 OFFICIAL_SOURCES = {
     "weather": "https://mausam.imd.gov.in/",
