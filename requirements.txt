@@ -8,3 +8,4 @@ flask
 google-generativeai
 joblib
 numpy
+gunicorn
