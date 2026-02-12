@@ -10,8 +10,8 @@ app = Flask(__name__)
 # --- CONFIGURATION ---
 # It is best practice to use environment variables for keys on Render
 API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyDKuwoOX3DthNEmoO7dpVUxQN_CuVAK0yg")
-genai.configure(api_key=API_KEY, transport='rest')
-ai_model = genai.GenerativeModel('gemini-2.5-flash')
+genai.Client(api_key=API_KEY)
+ai_model = genai.models.generate_content('gemini-2.5-flash')
 
 OFFICIAL_SOURCES = {
     "weather": "https://mausam.imd.gov.in/",
