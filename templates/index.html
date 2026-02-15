@@ -156,13 +156,13 @@
                     document.getElementById('aiAdvice').innerText = data.ai_advice;
 
                     const cardContainer = document.getElementById('cropCards');
-                    cardContainer.innerHTML = data.crops.map((crop, i) =>
+                    cardContainer.innerHTML = data.recommended_crops.map((crop, i) =>
                         `<div onclick="selectCrop(this, '${crop}')" class="crop-card bg-white px-5 py-3 rounded-xl font-bold shadow-sm ${i === 0 ? 'active-crop' : ''}">
                             ${crop}
                         </div>`
                     ).join('');
 
-                    renderPriceChart(data.crops[0]);
+                    renderPriceChart(data.recommended_crops[0]);
                     document.getElementById('reportContent').scrollIntoView({ behavior: 'smooth' });
                 } else {
                     alert("Error: " + data.message);
