@@ -11,7 +11,7 @@ app = Flask(__name__)
 # API Key सुरक्षित ठेवण्यासाठी environment variable वापरा
 API_KEY = os.environ.get("GEMINI_API_KEY")
 client = genai.Client(api_key=API_KEY)
-MODEL_ID = "gemini-2.0-flash-lite-preview-02-05" # अद्ययावत आणि वेगवान मॉडेल
+MODEL_ID = "gemini-2.5-flash" # अद्ययावत आणि वेगवान मॉडेल
 
 OFFICIAL_SOURCES = {
     "weather": "https://mausam.imd.gov.in/",
